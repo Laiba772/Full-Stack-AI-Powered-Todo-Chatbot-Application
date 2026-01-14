@@ -16,7 +16,7 @@ from src.api.schemas.auth import (
 )
 from src.api.dependencies.auth import require_auth, TokenUser
 
-router = APIRouter(prefix="/auth", tags=["Authentication"])
+router = APIRouter(tags=["Authentication"])
 
 
 @router.post(
