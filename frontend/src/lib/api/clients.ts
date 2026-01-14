@@ -1,12 +1,12 @@
-// src/lib/api/clients.ts
-import axios from "axios";
+// lib/api/clients.ts
+import axios from 'axios';
 
 const apiClient = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_API_URL,
-  withCredentials: true,
+  baseURL: process.env.NEXT_PUBLIC_API_URL || 'https://laiba67-todo-app.hf.space/',
+  withCredentials: true,           // ← very important for cookies
+  headers: {
+    'Content-Type': 'application/json',
+  },
 });
-
-// No longer need to manually add Authorization header from localStorage
-// as HttpOnly cookies are automatically sent by the browser.
 
 export default apiClient;
