@@ -1,6 +1,6 @@
 """Alembic environment configuration."""
 from logging.config import fileConfig
-from sqlalchemy import engine_from_config
+from sqlalchemy import engine_from_config, create_engine
 from sqlalchemy import pool
 from alembic import context
 from sqlmodel import SQLModel
@@ -31,11 +31,10 @@ def run_migrations_offline():
 
 def run_migrations_online():
     """Run migrations in 'online' mode."""
-    connectable = engine_from_config(
-        context.config.get_section(context.config.config_ini_section),
-        prefix="sqlalchemy.",
+    print(f"Alembic DATABASE_URL: {settings.database_url}") # Debugging print
+    connectable = create_engine(
+        settings.database_url,
         poolclass=pool.NullPool,
-        connect_args={"ssl": "require"}
     )
 
     with connectable.connect() as connection:
