@@ -66,7 +66,7 @@ class TaskService:
     def get_task(self, current_user: TokenUser, task_id: UUID) -> Task:
         """Get a single task for the current user."""
         task = self.session.exec(
-            select(Task).where(Task.id == task_id, Task.user_id == current_user.id)
+            select(Task).where(Task.id == task_id, Task.user_id == current_user.user_id)
         ).first()
 
         if not task:
@@ -115,7 +115,7 @@ async def create_task(
     service: TaskService = Depends(get_task_service),
     current_user: TokenUser = Depends(get_current_user),
 ):
-    return service.create_task(current_user.id, task_data)
+    return service.create_task(current_user.user_id, task_data)
 
 
 @router.get("", response_model=TaskListResponse)
@@ -125,7 +125,7 @@ async def list_tasks(
     service: TaskService = Depends(get_task_service),
     current_user: TokenUser = Depends(get_current_user),
 ):
-    return service.get_tasks(current_user.id, page, page_size)
+    return service.get_tasks(current_user.user_id, page, page_size)
 
 
 @router.get("/{task_id}", response_model=TaskResponse)

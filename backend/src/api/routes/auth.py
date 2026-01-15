@@ -81,8 +81,8 @@ async def sign_up(
         httponly=True,
         max_age=settings.jwt_expiration_minutes * 60, # in seconds
         expires=settings.jwt_expiration_minutes * 60, # in seconds
-        # secure=True, # enable in production with HTTPS
-        # samesite="Lax" # Strict for stronger protection
+        secure=True, # enable in production with HTTPS
+        samesite="None" # Strict for stronger protection
     )
 
     # Return only user info, token is in cookie
@@ -91,7 +91,7 @@ async def sign_up(
 
 @router.post(
     "/signin",
-    response_model=dict,
+    response_model=UserResponse,
     summary="Authenticate user",
     responses={
         200: {"description": "Authentication successful"},
@@ -144,12 +144,12 @@ async def sign_in(
         httponly=True,
         max_age=settings.jwt_expiration_minutes * 60, # in seconds
         expires=settings.jwt_expiration_minutes * 60, # in seconds
-        # secure=True, # enable in production with HTTPS
-        # samesite="Lax" # Strict for stronger protection
+        secure=True, # enable in production with HTTPS
+        samesite="None" # Strict for stronger protection
     )
 
     # Return a success message or minimal user info. Token is in cookie.
-    return {"message": "Signed in successfully"}
+    return UserResponse.model_validate(user)
 
 
 # Note: We don't need refresh and signout endpoints since BetterAuth handles these internally
@@ -162,7 +162,3 @@ async def sign_out(response: Response):
     return {"message": "Signed out successfully"}
 
 
-@router.get("/me", response_model=UserResponse, summary="Get current user information")
-async def get_me(current_user: TokenUser = Depends(require_auth)):
-    """Retrieve information about the current authenticated user."""
-    return UserResponse(id=current_user.user_id, email=current_user.email)

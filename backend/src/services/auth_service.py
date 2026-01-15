@@ -104,7 +104,7 @@ async def get_current_user_from_betterauth(
     in the request and validates it against the database.
     """
     # Try to get the session from cookies (BetterAuth typically uses secure cookies)
-    auth_cookie = request.cookies.get("better-auth-session") or request.headers.get("Authorization")
+    auth_cookie = request.cookies.get("access_token") or request.headers.get("Authorization")
 
     if not auth_cookie:
         raise HTTPException(

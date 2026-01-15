@@ -7,7 +7,7 @@ import apiClient from '@/lib/api/clients';
 interface User {
   id: string;
   email: string;
-  token?: string;
+
 }
 
 interface AuthState {
@@ -18,38 +18,43 @@ interface AuthState {
 }
 
 interface AuthContextType extends AuthState {
-  signIn: (email: string, password: string) => Promise<void>;
-  signUp: (email: string, password: string) => Promise<void>;
+
+  signIn: (email: string, password: string) => Promise<User>;
+
+  signUp: (email: string, password: string) => Promise<User>;
+
   signOut: () => Promise<void>;
-  refreshAuth: () => void;
+
 }
 
 export function useBetterAuth(): AuthContextType {
   const router = useRouter();
 
   // Direct API calls to match our backend endpoints
-  const signInHandler = useCallback(async (email: string, password: string) => {
+  const signInHandler = useCallback(async (email: string, password: string): Promise<User> => {
     try {
-      await apiClient.post('/auth/signin', {
+      const res = await apiClient.post<User>('/auth/signin', {
         email,
         password
       });
 
       router.push('/tasks');
+      return res.data;
     } catch (error: any) {
       const errorMessage = error.response?.data?.detail?.message || error.message || 'Sign in failed';
       throw new Error(errorMessage);
     }
   }, [router]);
 
-  const signUpHandler = useCallback(async (email: string, password: string) => {
+  const signUpHandler = useCallback(async (email: string, password: string): Promise<User> => {
     try {
-      await apiClient.post('/auth/signup', {
+      const res = await apiClient.post<User>('/auth/signup', {
         email,
         password
       });
 
       router.push('/tasks');
+      return res.data;
     } catch (error: any) {
       const errorMessage = error.response?.data?.detail?.message || error.message || 'Sign up failed';
       throw new Error(errorMessage);
@@ -67,9 +72,7 @@ export function useBetterAuth(): AuthContextType {
     }
   }, [router]);
 
-  const refreshAuth = useCallback(() => {
-    // Session refreshing would happen automatically with JWT
-  }, []);
+
 
   // Return initial state - the actual state will be managed by AuthContext
   return {
@@ -80,6 +83,6 @@ export function useBetterAuth(): AuthContextType {
     signIn: signInHandler,
     signUp: signUpHandler,
     signOut: signOutHandler,
-    refreshAuth,
+
   };
 }
