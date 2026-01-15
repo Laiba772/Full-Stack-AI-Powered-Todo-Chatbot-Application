@@ -21,7 +21,7 @@ router = APIRouter(tags=["Authentication"])
 
 @router.post(
     "/signup",
-    response_model=UserResponse,
+    response_model=SignUpResponse,
     status_code=status.HTTP_201_CREATED,
     summary="Register a new user",
     responses={
@@ -37,7 +37,7 @@ async def sign_up(
 ):
     """Register a new user with email and password.
 
-    Creates a new user account and sets an HttpOnly access token cookie.
+    Creates a new user account, returns the access token, and sets an HttpOnly cookie.
     """
     settings = get_settings()
 
@@ -69,29 +69,36 @@ async def sign_up(
         "email": user.email,
         "type": "access"
     }
+    expires_delta = timedelta(minutes=settings.jwt_expiration_minutes)
     access_token = auth_service.create_access_token(
         data=access_token_data,
-        expires_delta=timedelta(minutes=settings.jwt_expiration_minutes)
+        expires_delta=expires_delta
     )
 
-    # Set HttpOnly cookie
+    # Set HttpOnly cookie as a fallback/secondary auth mechanism
     response.set_cookie(
         key="access_token",
         value=access_token,
         httponly=True,
-        max_age=settings.jwt_expiration_minutes * 60, # in seconds
-        expires=settings.jwt_expiration_minutes * 60, # in seconds
-        secure=True, # enable in production with HTTPS
-        samesite="None" # Strict for stronger protection
+        max_age=int(expires_delta.total_seconds()),
+        expires=int(expires_delta.total_seconds()),
+        secure=True,
+        samesite="None"
     )
 
-    # Return only user info, token is in cookie
-    return UserResponse.model_validate(user)
+    # Return token in response body for client-side handling
+    return SignUpResponse(
+        user=UserResponse.model_validate(user),
+        access_token=access_token,
+        refresh_token="", # Not implemented
+        expires_in=int(expires_delta.total_seconds()),
+        token_type="bearer"
+    )
 
 
 @router.post(
     "/signin",
-    response_model=UserResponse,
+    response_model=SignInResponse,
     summary="Authenticate user",
     responses={
         200: {"description": "Authentication successful"},
@@ -106,7 +113,7 @@ async def sign_in(
 ):
     """Authenticate user with email and password.
 
-    Sets an HttpOnly access token cookie on successful authentication.
+    Returns an access token and sets an HttpOnly cookie.
     """
     settings = get_settings()
 
@@ -132,24 +139,31 @@ async def sign_in(
         "email": user.email,
         "type": "access"
     }
+    expires_delta = timedelta(minutes=settings.jwt_expiration_minutes)
     access_token = auth_service.create_access_token(
         data=access_token_data,
-        expires_delta=timedelta(minutes=settings.jwt_expiration_minutes)
+        expires_delta=expires_delta
     )
 
-    # Set HttpOnly cookie
+    # Set HttpOnly cookie as a fallback/secondary auth mechanism
     response.set_cookie(
         key="access_token",
         value=access_token,
         httponly=True,
-        max_age=settings.jwt_expiration_minutes * 60, # in seconds
-        expires=settings.jwt_expiration_minutes * 60, # in seconds
+        max_age=int(expires_delta.total_seconds()),
+        expires=int(expires_delta.total_seconds()),
         secure=True, # enable in production with HTTPS
         samesite="None" # Strict for stronger protection
     )
-
-    # Return a success message or minimal user info. Token is in cookie.
-    return UserResponse.model_validate(user)
+    
+    # Return token in response body for client-side handling
+    return SignInResponse(
+        access_token=access_token,
+        refresh_token="", # Not implemented
+        expires_in=int(expires_delta.total_seconds()),
+        token_type="bearer",
+        user=UserResponse.model_validate(user)
+    )
 
 
 # Note: We don't need refresh and signout endpoints since BetterAuth handles these internally

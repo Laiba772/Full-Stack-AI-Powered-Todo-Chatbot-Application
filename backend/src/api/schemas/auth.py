@@ -105,6 +105,7 @@ class SignInResponse(BaseModel):
     refresh_token: str = Field(..., description="Refresh token")
     expires_in: int = Field(..., description="Token expiration time in seconds")
     token_type: str = Field(..., description="Type of token (e.g., bearer)")
+    user: UserResponse = Field(..., description="User information")
 
     model_config = ConfigDict(
         json_schema_extra={
@@ -112,7 +113,11 @@ class SignInResponse(BaseModel):
                 "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
                 "refresh_token": "refresh_token_here",
                 "expires_in": 900,
-                "token_type": "bearer"
+                "token_type": "bearer",
+                "user": {
+                    "id": "550e8400-e29b-41d4-a716-446655440000",
+                    "email": "user@example.com"
+                }
             }
         }
     )

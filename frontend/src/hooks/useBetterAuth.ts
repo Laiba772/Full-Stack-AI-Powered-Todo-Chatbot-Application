@@ -7,7 +7,16 @@ import apiClient from '@/lib/api/clients';
 interface User {
   id: string;
   email: string;
+}
 
+interface SignInResponse {
+  access_token: string;
+  user: User;
+}
+
+interface SignUpResponse {
+  access_token: string;
+  user: User;
 }
 
 interface AuthState {
@@ -18,13 +27,9 @@ interface AuthState {
 }
 
 interface AuthContextType extends AuthState {
-
   signIn: (email: string, password: string) => Promise<User>;
-
   signUp: (email: string, password: string) => Promise<User>;
-
   signOut: () => Promise<void>;
-
 }
 
 export function useBetterAuth(): AuthContextType {
@@ -33,13 +38,17 @@ export function useBetterAuth(): AuthContextType {
   // Direct API calls to match our backend endpoints
   const signInHandler = useCallback(async (email: string, password: string): Promise<User> => {
     try {
-      const res = await apiClient.post<User>('/api/auth/signin', {
+      const res = await apiClient.post<SignInResponse>('/api/auth/signin', {
         email,
         password
       });
 
+      if (res.data.access_token) {
+        localStorage.setItem('access_token', res.data.access_token);
+      }
+
       router.push('/tasks');
-      return res.data;
+      return res.data.user;
     } catch (error: any) {
       const errorMessage = error.response?.data?.detail?.message || error.message || 'Sign in failed';
       throw new Error(errorMessage);
@@ -48,13 +57,17 @@ export function useBetterAuth(): AuthContextType {
 
   const signUpHandler = useCallback(async (email: string, password: string): Promise<User> => {
     try {
-      const res = await apiClient.post<User>('/api/auth/signup', {
+      const res = await apiClient.post<SignUpResponse>('/api/auth/signup', {
         email,
         password
       });
 
-      router.push('/api/tasks');
-      return res.data;
+      if (res.data.access_token) {
+        localStorage.setItem('access_token', res.data.access_token);
+      }
+      
+      router.push('/tasks');
+      return res.data.user;
     } catch (error: any) {
       const errorMessage = error.response?.data?.detail?.message || error.message || 'Sign up failed';
       throw new Error(errorMessage);
@@ -64,10 +77,10 @@ export function useBetterAuth(): AuthContextType {
   const signOutHandler = useCallback(async () => {
     try {
       await apiClient.post('/api/auth/signout'); // Call backend to clear HttpOnly cookie
-      router.push('/signin');
     } catch (error) {
-      console.error('Sign out error:', error);
-      // Even if sign out fails on backend, redirect to sign in locally
+      console.error('Sign out error on backend:', error);
+    } finally {
+      localStorage.removeItem('access_token');
       router.push('/signin');
     }
   }, [router]);

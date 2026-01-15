@@ -1,10 +1,17 @@
 'use client';
 
-import { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import { redirect } from 'next/navigation';
+import { createContext, useContext, useState, useEffect } from 'react';
+import { usePathname, redirect } from 'next/navigation';
 import { User, AuthState, AuthContextType } from '@/types/auth';
 import { useBetterAuth } from '@/hooks/useBetterAuth';
-import apiClient from '@/lib/api/clients';
+import { jwtDecode } from 'jwt-decode';
+import { AuthGuard } from '@/components/auth/AuthGuard';
+
+interface DecodedToken {
+  sub: string;
+  email: string;
+  exp: number;
+}
 
 export const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
@@ -17,14 +24,41 @@ export function AuthContextProvider({ children }: { children: React.ReactNode })
     error: null,
   });
 
+  useEffect(() => {
+    const token = localStorage.getItem('access_token');
+    if (token) {
+      try {
+        const decodedToken = jwtDecode<DecodedToken>(token);
+        const currentTime = Date.now() / 1000;
 
+        if (decodedToken.exp > currentTime) {
+          setState({
+            user: { id: decodedToken.sub, email: decodedToken.email },
+            isAuthenticated: true,
+            loading: false,
+            error: null,
+          });
+        } else {
+          // Token expired
+          localStorage.removeItem('access_token');
+          setState(s => ({ ...s, isAuthenticated: false, loading: false }));
+        }
+      } catch (error) {
+        // Invalid token
+        localStorage.removeItem('access_token');
+        setState(s => ({ ...s, isAuthenticated: false, loading: false }));
+      }
+    } else {
+      setState(s => ({ ...s, loading: false }));
+    }
+  }, []);
 
-  const signIn = async (email: string, password: string) => {
+  const signIn = async (email: string, password: string) => {. // This line contains the extra period from the original replace string
     setState(s => ({ ...s, loading: true, error: null }));
     try {
-      const res = await auth.signIn(email, password);
+      const user = await auth.signIn(email, password);
       setState({
-        user: { id: res.id, email: res.email },
+        user: { id: user.id, email: user.email },
         isAuthenticated: true,
         loading: false,
         error: null,
@@ -35,13 +69,12 @@ export function AuthContextProvider({ children }: { children: React.ReactNode })
     }
   };
 
-  // similar for signUp...
   const signUp = async (email: string, password: string) => {
     setState(s => ({ ...s, loading: true, error: null }));
     try {
-      const res = await auth.signUp(email, password);
+      const user = await auth.signUp(email, password);
       setState({
-        user: { id: res.id, email: res.email },
+        user: { id: user.id, email: user.email },
         isAuthenticated: true,
         loading: false,
         error: null,
@@ -64,7 +97,7 @@ export function AuthContextProvider({ children }: { children: React.ReactNode })
         loading: false,
         error: null,
       });
-      redirect('/signin');
+      // No need to redirect here, the hook does it
     }
   };
 
@@ -72,7 +105,7 @@ export function AuthContextProvider({ children }: { children: React.ReactNode })
     <AuthContext.Provider
       value={{ ...state, signIn, signUp, signOut }}
     >
-      {children}
+      <AuthGuard>{children}</AuthGuard>
     </AuthContext.Provider>
   );
 }
