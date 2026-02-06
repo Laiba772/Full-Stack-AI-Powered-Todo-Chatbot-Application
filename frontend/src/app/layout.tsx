@@ -1,52 +1,53 @@
 "use client";
 
 import type { Metadata } from "next";
-import { Geist_Mono } from "next/font/google"; // Correct imports
+import { Geist_Mono } from "next/font/google";
+import { Inter } from "next/font/google";
 import "./globals.css";
 import { BetterAuthProvider } from "@/components/auth/BetterAuthProvider";
 import { useEffect, useState } from "react";
 import { isDomainAllowed } from "@/lib/domainCheck";
 
-import { Inter } from "next/font/google";
-
+// Fonts
 const inter = Inter({
   subsets: ["latin"],
   variable: "--font-inter",
 });
 
 const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
   subsets: ["latin"],
+  variable: "--font-geist-mono",
 });
 
-const metadata: Metadata = {
+// Metadata
+export const metadata: Metadata = {
   title: "Todo App | Manage Your Tasks",
-  description: "A simple and efficient task management application",
+  description: "A simple and efficient AI-powered todo chatbot",
 };
 
-export default function RootLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+// RootLayout
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   const [domainCheckPassed, setDomainCheckPassed] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (typeof window !== "undefined") {
-      const currentDomain = window.location.host;
-      const allowedDomainsEnv = process.env.NEXT_PUBLIC_CHAT_DOMAIN_KEY;
+    // SSR fallback: always true for server-side
+    if (typeof window === "undefined") {
+      setDomainCheckPassed(true);
+      return;
+    }
 
-      if (!isDomainAllowed(currentDomain, allowedDomainsEnv)) {
-        setError("Access Denied: This chat is not available on this domain.");
-      } else {
-        setDomainCheckPassed(true);
-      }
+    const currentDomain = window.location.host;
+    const allowedDomainsEnv = process.env.NEXT_PUBLIC_CHAT_DOMAIN_KEY || "";
+
+    if (!isDomainAllowed(currentDomain, allowedDomainsEnv)) {
+      setError("Access Denied: This chat is not available on this domain.");
     } else {
-      setDomainCheckPassed(true); // SSR fallback
+      setDomainCheckPassed(true);
     }
   }, []);
 
+  // Show error if domain not allowed
   if (error) {
     return (
       <html lang="en">
@@ -61,6 +62,7 @@ export default function RootLayout({
     );
   }
 
+  // While domain check is in progress
   if (!domainCheckPassed) {
     return (
       <html lang="en">
@@ -73,11 +75,10 @@ export default function RootLayout({
     );
   }
 
+  // Main layout
   return (
     <html lang="en">
-      <body
-        className={`${inter.variable} ${geistMono.variable} antialiased`}
-      >
+      <body className={`${inter.variable} ${geistMono.variable} antialiased`}>
         <BetterAuthProvider>{children}</BetterAuthProvider>
       </body>
     </html>
