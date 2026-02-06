@@ -1,6 +1,6 @@
 {
   "buildCommand": "cd frontend && npm run build",
-  "installCommand": "cd frontend && npm install",
+  "installCommand": "cd frontend ; npm install",
   "outputDirectory": "frontend/.next",
   "env": {
     "NEXT_PUBLIC_CHAT_DOMAIN_KEY": "domain_pk_6985b10132b08195a23983fb1dd31dcb09cc2a2170498ee0",
