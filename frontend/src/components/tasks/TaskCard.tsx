@@ -16,13 +16,13 @@ interface TaskCardProps {
 
 export function TaskCard({ task, onToggleComplete, onEdit, onDelete }: TaskCardProps) {
   return (
-    <div className="bg-background-card border border-gray-800 rounded-2xl p-5 hover:bg-background-hover hover:border-gray-700 hover:shadow-card transition-all duration-200">
+    <div className="bg-linear-to-br from-indigo-900/30 via-purple-900/20 to-cyan-900/30 backdrop-blur-sm border border-purple-500/30 rounded-2xl p-5 hover:from-indigo-800/40 hover:via-purple-800/30 hover:to-cyan-800/40 hover:border-purple-400/50 hover:shadow-lg hover:shadow-purple-500/20 transition-all duration-300">
       <div className="flex items-start gap-4">
         <div className="pt-0.5">
           <Checkbox
-            checked={task.is_completed}
+            checked={task.is_complete}
             onChange={onToggleComplete}
-            aria-label={`Mark "${task.title}" as ${task.is_completed ? 'incomplete' : 'complete'}`}
+            aria-label={`Mark "${task.title}" as ${task.is_complete ? 'incomplete' : 'complete'}`}
           />
         </div>
 
@@ -30,12 +30,12 @@ export function TaskCard({ task, onToggleComplete, onEdit, onDelete }: TaskCardP
           <div className="flex items-start justify-between gap-3">
             <h3
               className={`text-lg font-semibold ${
-                task.is_completed ? 'line-through text-gray-500' : 'text-gray-100'
+                task.is_complete ? 'line-through text-gray-500' : 'text-gray-100'
               }`}
             >
               {task.title}
             </h3>
-            {task.is_completed && (
+            {task.is_complete && (
               <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-success-500/10 text-success-400 border border-success-500/20">
                 ✓ Done
               </span>
@@ -54,10 +54,20 @@ export function TaskCard({ task, onToggleComplete, onEdit, onDelete }: TaskCardP
           </div>
 
           <div className="mt-4 flex items-center gap-2">
-            <Button variant="ghost" size="sm" onClick={onEdit}>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={onEdit}
+              className="transform transition-none hover:scale-100 hover:shadow-none"
+            >
               ✏️ Edit
             </Button>
-            <Button variant="danger" size="sm" onClick={onDelete}>
+            <Button
+              variant="danger"
+              size="sm"
+              onClick={onDelete}
+              className="transform transition-none hover:scale-100 hover:shadow-none"
+            >
               🗑️ Delete
             </Button>
           </div>

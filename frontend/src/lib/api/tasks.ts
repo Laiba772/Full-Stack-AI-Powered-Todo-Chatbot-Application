@@ -4,8 +4,18 @@ import { Task, TaskCreateRequest, TaskUpdateRequest, TaskListResponse } from "@/
 
 // Get all tasks (paginated)
 export const getTasks = async (userId: string, page = 1, page_size = 20): Promise<TaskListResponse> => {
-  const response = await apiClient.get<TaskListResponse>(`/api/users/${userId}/tasks?page=${page}&page_size=${page_size}`);
-  return response.data;
+  const response = await apiClient.get<{ tasks: Task[] }>(`/api/users/${userId}/tasks?page=${page}&page_size=${page_size}`);
+  const tasks = response.data.tasks || [];
+  const total = tasks.length; // Assuming all tasks are returned for simplicity for now
+  const total_pages = Math.ceil(total / page_size);
+
+  return {
+    items: tasks,
+    total: total,
+    page: page,
+    page_size: page_size,
+    total_pages: total_pages,
+  };
 };
 
 // Get single task

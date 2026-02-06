@@ -1,0 +1,14 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python -m pytest tests/ -v)",
+      "Bash(py -m pytest tests/ -v)",
+      "Bash(py -c \"from src.config import get_settings; s = get_settings\\(\\); print\\(''JWT Secret set:'', bool\\(s.jwt_secret\\)\\); print\\(''DB URL:'', s.database_url[:50] if s.database_url else ''None''\\)\")",
+      "Bash(del \"C:\\\\Users\\\\Dell 7480\\\\Desktop\\\\hackathon-project\\\\hackathon-2\\\\phase-3-AI-Powered-Todo-Chatbot\\\\backend\\\\src\\\\db\\\\sesion.py\")",
+      "Bash(py -m pytest tests/test_models.py::TestModels::test_create_user -v)",
+      "Bash(py -m pytest:*)",
+      "Bash(dir:*)",
+      "Bash(findstr:*)"
+    ]
+  }
+}

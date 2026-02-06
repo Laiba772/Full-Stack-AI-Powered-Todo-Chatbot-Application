@@ -5,7 +5,7 @@ export interface Task {
   user_id: string;           // User UUID
   title: string;             // Task title (required, 1-255 chars)
   description: string | null;// Task description (optional, plain text)
-  is_completed: boolean;     // Completion status
+  is_complete: boolean;      // Completion status
   created_at: string;        // ISO 8601 timestamp
   updated_at: string;        // ISO 8601 timestamp
 }
@@ -26,7 +26,7 @@ export interface TaskCreateRequest {
 export interface TaskUpdateRequest {
   title?: string;
   description?: string;
-  is_completed?: boolean;
+  is_complete?: boolean;
 }
 
 export interface TaskFormState {

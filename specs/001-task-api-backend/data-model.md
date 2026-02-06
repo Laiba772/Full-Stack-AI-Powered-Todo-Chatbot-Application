@@ -24,7 +24,7 @@ class Task(SQLModel, table=True):
     user_id: UUID = Field(foreign_key="user.id", nullable=False, index=True)
     title: str = Field(max_length=255, nullable=False, min_length=1)
     description: Optional[str] = Field(default=None, nullable=True)
-    is_completed: bool = Field(default=False, nullable=False)
+    is_complete: bool = Field(default=False, nullable=False)
     created_at: datetime = Field(default_factory=datetime.utcnow, nullable=False)
     updated_at: datetime = Field(default_factory=datetime.utcnow, nullable=False)
 ```
@@ -37,7 +37,7 @@ class Task(SQLModel, table=True):
 | user_id | UUID | Foreign Key, Not Null, Indexed | Owning user identifier |
 | title | String(255) | Not Null, Min 1 char | Task title |
 | description | Text | Nullable | Optional task details |
-| is_completed | Boolean | Default: False | Completion status |
+| is_complete | Boolean | Default: False | Completion status |
 | created_at | DateTime | Auto-generated | Creation timestamp |
 | updated_at | DateTime | Auto-generated | Last modification timestamp |
 
@@ -46,7 +46,7 @@ class Task(SQLModel, table=True):
 1. **Primary Key**: `id` (clustered index)
 2. **Foreign Key**: `user_id` (for join performance)
 3. **Composite**: `(user_id, created_at)` (for list queries with sorting)
-4. **Composite**: `(user_id, is_completed)` (for filtered lists)
+4. **Composite**: `(user_id, is_complete)` (for filtered lists)
 
 ### Validation Rules
 

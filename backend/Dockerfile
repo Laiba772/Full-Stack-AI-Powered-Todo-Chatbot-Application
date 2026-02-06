@@ -1,27 +1,31 @@
-# Use an official Python image as a base
-FROM python:3.11-slim-bullseye
+# Use Python 3.11 slim as the base image
+FROM python:3.11-slim
 
-# Set the working directory in the container
+# Set environment variables
+ENV PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1
+
+# Set working directory in the container
 WORKDIR /app
 
-# Copy backend requirements file and install dependencies
+# Install system dependencies for PostgreSQL and async support
+RUN apt-get update && apt-get install -y \
+    gcc \
+    postgresql-client \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copy only the requirements file first to leverage Docker cache layers
 COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy the alembic.ini and the backend application code
-COPY ../alembic.ini .
-COPY src ./src
-COPY alembic ./alembic
-COPY test_bcrypt.py .
-COPY test_server.py .
+# Install Python dependencies
+RUN pip install --no-cache-dir --upgrade pip && \
+    pip install --no-cache-dir -r requirements.txt
 
-# Run Alembic migrations
-RUN apt-get update && apt-get install -y --no-install-recommends gcc && rm -rf /var/lib/apt/lists/*
-RUN alembic upgrade head
+# Copy the source code to the working directory
+COPY src/ ./src/
 
-# Expose the port FastAPI will run on (from backend/src/config.py)
-EXPOSE 7860
+# Expose port 8000 for the FastAPI application
+EXPOSE 8000
 
-# Command to run the FastAPI application
-# Use the host and port from config (0.0.0.0:7860) as shown in logs
-CMD ["uvicorn", "src.main:app", "--host", "0.0.0.0", "--port", "7860"]
+# Run the application with Uvicorn
+CMD ["uvicorn", "src.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]

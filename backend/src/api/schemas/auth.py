@@ -7,6 +7,12 @@ from uuid import UUID
 class SignUpRequest(BaseModel):
     """Schema for user registration request."""
 
+    username: str = Field(
+        ...,
+        min_length=3,
+        max_length=50,
+        description="User's unique username"
+    )
     email: str = Field(
         ...,
         min_length=5,
@@ -23,6 +29,7 @@ class SignUpRequest(BaseModel):
     model_config = ConfigDict(
         json_schema_extra={
             "example": {
+                "username": "johndoe",
                 "email": "user@example.com",
                 "password": "securepassword123"
             }
@@ -60,6 +67,7 @@ class UserResponse(BaseModel):
     """Schema for user response."""
 
     id: UUID = Field(..., description="Unique user identifier")
+    username: str = Field(..., description="User's unique username")
     email: str = Field(..., description="User's email address")
 
     model_config = ConfigDict(
@@ -67,6 +75,7 @@ class UserResponse(BaseModel):
         json_schema_extra={
             "example": {
                 "id": "550e8400-e29b-41d4-a716-446655440000",
+                "username": "johndoe",
                 "email": "user@example.com"
             }
         }

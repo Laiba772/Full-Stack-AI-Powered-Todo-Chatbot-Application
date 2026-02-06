@@ -1,11 +1,13 @@
+# backend/src/api/routes/auth.py
 """BetterAuth-compatible authentication API endpoints."""
 from datetime import datetime, timedelta
 from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException, status, Response
 from sqlmodel import select
+from sqlmodel.ext.asyncio.session import AsyncSession
 from src.config import get_settings
 from src.services.auth_service import auth_service
-from src.models.database import get_session
+from src.models.database import get_async_session
 from src.models.user import User
 from src.api.schemas.auth import (
     SignUpRequest,
@@ -33,7 +35,7 @@ router = APIRouter(tags=["Authentication"])
 async def sign_up(
     request: SignUpRequest,
     response: Response, # Inject Response object
-    session=Depends(get_session),
+    session: AsyncSession = Depends(get_async_session),
 ):
     """Register a new user with email and password.
 
@@ -42,10 +44,10 @@ async def sign_up(
     settings = get_settings()
 
     # Check if email already exists
-    existing_user = session.exec(
+    existing_email_user = (await session.exec(
         select(User).where(User.email == request.email)
-    ).first()
-    if existing_user:
+    )).first()
+    if existing_email_user:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
             detail={
@@ -55,13 +57,31 @@ async def sign_up(
             },
         )
 
+    # Check if username already exists
+    existing_username_user = (await session.exec(
+        select(User).where(User.username == request.username)
+    )).first()
+    if existing_username_user:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail={
+                "code": "USERNAME_EXISTS",
+                "message": "Username is already taken",
+                "details": {"username": request.username},
+            },
+        )
+
     # Hash password and create user
     password_hash = auth_service.get_password_hash(request.password)
 
-    user = User(email=request.email, password_hash=password_hash)
+    user = User(
+        username=request.username,
+        email=request.email,
+        password_hash=password_hash
+    )
     session.add(user)
-    session.commit()
-    session.refresh(user)
+    await session.commit()
+    await session.refresh(user)
 
     # Create access token
     access_token_data = {
@@ -82,7 +102,7 @@ async def sign_up(
         httponly=True,
         max_age=int(expires_delta.total_seconds()),
         expires=int(expires_delta.total_seconds()),
-        secure=True,
+        secure=False,
         samesite="Lax"
     )
 
@@ -109,7 +129,7 @@ async def sign_up(
 async def sign_in(
     request: SignInRequest,
     response: Response, # Inject Response object
-    session=Depends(get_session),
+    session: AsyncSession = Depends(get_async_session),
 ):
     """Authenticate user with email and password.
 
@@ -118,9 +138,9 @@ async def sign_in(
     settings = get_settings()
 
     # Find user by email
-    user = session.exec(
+    user = (await session.exec(
         select(User).where(User.email == request.email)
-    ).first()
+    )).first()
 
     # Verify credentials
     if not user or not auth_service.verify_password(request.password, user.password_hash):
@@ -152,7 +172,7 @@ async def sign_in(
         httponly=True,
         max_age=int(expires_delta.total_seconds()),
         expires=int(expires_delta.total_seconds()),
-        secure=True, # enable in production with HTTPS
+        secure=False, # enable in production with HTTPS
         samesite="Lax" 
     )
     

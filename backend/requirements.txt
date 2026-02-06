@@ -9,12 +9,15 @@ sqlmodel>=0.0.14
 
 # Database
 psycopg2-binary>=2.9.9
+asyncpg>=0.29.0
 alembic>=1.13.0
+aiosqlite>=0.19.0 # Added for async SQLite in tests
 
 # Testing
 pytest>=7.4.0
 pytest-asyncio>=0.21.0
 httpx>=0.25.0
+pytest-mock>=3.10.0 # Explicitly add pytest-mock with a version
 
 # Environment configuration
 python-dotenv>=1.0.0
@@ -24,6 +27,10 @@ bcrypt>=4.1.0
 pyjwt>=2.9.0
 python-jose>=3.3.0
 passlib[bcrypt]>=1.7.4
+
+# AI integration
+openai>=1.1.1 # Added for chat API/service
+requests>=2.31.0 # Added for general HTTP requests, potentially in tests or utils
 
 # Utilities
 python-multipart>=0.0.6

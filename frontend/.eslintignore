@@ -1,0 +1,6 @@
+# ESLint ignore for frontend
+node_modules/
+dist/
+build/
+coverage/
+*.min.js

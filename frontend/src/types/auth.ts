@@ -1,6 +1,7 @@
 // T011: Auth type definitions
 
 export interface User {
+  name: string;
   id: string;           // UUID from JWT sub claim
   email: string;        // User's email address
 }

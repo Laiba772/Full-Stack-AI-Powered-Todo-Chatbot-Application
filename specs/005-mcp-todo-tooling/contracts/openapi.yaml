@@ -1,0 +1,224 @@
+openapi: 3.0.0
+info:
+  title: MCP Todo Tooling API
+  version: 1.0.0
+  description: OpenAPI specification for the MCP tools exposing Todo operations.
+
+components:
+  schemas:
+    Task:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique identifier for the task.
+        user_id:
+          type: string
+          format: uuid
+          description: The ID of the user who owns the task.
+        description:
+          type: string
+          description: The main content of the todo task.
+        due_date:
+          type: string
+          format: date-time
+          nullable: true
+          description: Optional timestamp for when the task is due.
+        is_complete:
+          type: boolean
+          description: Indicates if the task is completed.
+      required:
+        - id
+        - user_id
+        - description
+        - is_complete
+
+    AddTaskInput:
+      type: object
+      properties:
+        description:
+          type: string
+          description: The description of the new task.
+        due_date:
+          type: string
+          format: date-time
+          nullable: true
+          description: Optional due date for the task.
+      required:
+        - description
+
+    TaskOutput:
+      type: object
+      properties:
+        task_id:
+          type: string
+          format: uuid
+          description: The ID of the task.
+        description:
+          type: string
+          description: The description of the task.
+        is_complete:
+          type: boolean
+          description: The completion status of the task.
+      required:
+        - task_id
+        - description
+        - is_complete
+
+    ListTasksOutput:
+      type: object
+      properties:
+        tasks:
+          type: array
+          items:
+            $ref: '#/components/schemas/Task'
+      required:
+        - tasks
+    
+    UpdateTaskInput:
+      type: object
+      properties:
+        task_id:
+          type: string
+          format: uuid
+          description: The ID of the task to update.
+        description:
+          type: string
+          description: New description for the task.
+        due_date:
+          type: string
+          format: date-time
+          nullable: true
+          description: New optional due date for the task.
+        is_complete:
+          type: boolean
+          description: New completion status for the task.
+      required:
+        - task_id
+      minProperties: 2 # At least task_id and one other field to update
+
+    CompleteTaskInput:
+      type: object
+      properties:
+        task_id:
+          type: string
+          format: uuid
+          description: The ID of the task to mark as complete.
+      required:
+        - task_id
+
+    DeleteTaskInput:
+      type: object
+      properties:
+        task_id:
+          type: string
+          format: uuid
+          description: The ID of the task to delete.
+      required:
+        - task_id
+
+    StatusOutput:
+      type: object
+      properties:
+        task_id:
+          type: string
+          format: uuid
+          description: The ID of the task.
+        status:
+          type: string
+          description: Status of the operation (e.g., "completed", "deleted").
+      required:
+        - task_id
+        - status
+
+# MCP Tools will typically be exposed through a single endpoint or dedicated SDK methods.
+# This section defines the schemas for input/output of each tool.
+# The actual HTTP endpoints would be part of the MCP SDK server's implementation, not directly here.
+# This OpenAPI is primarily for defining the tool contracts.
+paths: {} 
+# Paths are empty as MCP tools are invoked via SDK, not direct HTTP endpoints defined here.
+# This spec defines the *schema* of the tools for the SDK.
+
+x-mcp-tools:
+  add_task:
+    summary: Adds a new todo task for the authenticated user.
+    operationId: addTask
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/AddTaskInput'
+    responses:
+      '200':
+        description: Task added successfully.
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TaskOutput'
+  list_tasks:
+    summary: Lists all todo tasks for the authenticated user.
+    operationId: listTasks
+    parameters:
+      - in: query
+        name: is_complete
+        schema:
+          type: boolean
+          default: false
+        description: Filter tasks by completion status.
+    responses:
+      '200':
+        description: List of tasks retrieved successfully.
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ListTasksOutput'
+  update_task:
+    summary: Updates an existing todo task for the authenticated user.
+    operationId: updateTask
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/UpdateTaskInput'
+    responses:
+      '200':
+        description: Task updated successfully.
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TaskOutput'
+  complete_task:
+    summary: Marks a todo task as complete for the authenticated user.
+    operationId: completeTask
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/CompleteTaskInput'
+    responses:
+      '200':
+        description: Task marked as complete.
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StatusOutput'
+  delete_task:
+    summary: Deletes a todo task for the authenticated user.
+    operationId: deleteTask
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/DeleteTaskInput'
+    responses:
+      '200':
+        description: Task deleted successfully.
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StatusOutput'

@@ -1,157 +1,168 @@
-"""Task API endpoints with proper user isolation."""
-from datetime import datetime, timezone
-from typing import Optional
 from uuid import UUID
-from fastapi import APIRouter, Depends, HTTPException, Query, status
-from sqlmodel import Session, select, func
+from fastapi import APIRouter, Depends, HTTPException, status, Query
+from sqlmodel.ext.asyncio.session import AsyncSession
+from sqlmodel import select
+from typing import List, Optional
+from datetime import datetime, timezone
 
-from src.models.database import get_session
+from src.models.database import get_async_session
 from src.models.task import Task
-from src.api.schemas.task import TaskCreate, TaskUpdate, TaskResponse, TaskListResponse
-from src.api.schemas.errors import ValidationError, NotFoundError
-from src.api.dependencies.auth import get_current_user, TokenUser
+from src.models.user import User
+from src.services.auth_service import get_current_user_from_betterauth
+from src.schemas.task import (
+    AddTaskInput,
+    TaskOutput,
+    UpdateTaskInput,
+)
 
-router = APIRouter()
+router = APIRouter(prefix="/tasks", tags=["tasks"])
 
 
+# =========================
+# Service Layer
+# =========================
 class TaskService:
-    """Service class for task operations."""
+    def __init__(self, db: AsyncSession):
+        self.db = db
 
-    def __init__(self, session: Session):
-        self.session = session
+    async def create_task(self, user_id: UUID, task_data: AddTaskInput) -> Task:
+        new_task = Task(**task_data.model_dump(), user_id=user_id)
+        # Ensure UTC for due_date
+        if new_task.due_date and new_task.due_date.tzinfo is not None:
+            new_task.due_date = new_task.due_date.astimezone(timezone.utc).replace(tzinfo=None)
+        self.db.add(new_task)
+        await self.db.commit()
+        await self.db.refresh(new_task)
+        return new_task
 
-    def create_task(self, user_id: UUID, task_data: TaskCreate) -> Task:
-        """Create a new task for a user."""
-        if not task_data.title or not task_data.title.strip():
-            raise ValidationError(message="Title is required and cannot be empty")
-
-        task = Task(
-            user_id=user_id,
-            title=task_data.title.strip(),
-            description=task_data.description,
-        )
-        self.session.add(task)
-        self.session.commit()
-        self.session.refresh(task)
-        return task
-
-    def get_tasks(
-        self,
-        user_id: UUID,
-        page: int = 1,
-        page_size: int = 20,
-    ) -> TaskListResponse:
-        """Get all tasks for a user with pagination."""
+    async def get_tasks(self, user_id: UUID, page: int = 1, page_size: int = 20) -> List[Task]:
         offset = (page - 1) * page_size
-
-        query = select(Task).where(Task.user_id == user_id)
-        count_statement = select(func.count()).where(Task.user_id == user_id)
-        total = self.session.exec(count_statement).one()
-
-        task_instances = self.session.exec(
-            query.offset(offset).limit(page_size).order_by(Task.created_at.desc())
-        ).all()
-
-        items = [TaskResponse.model_validate(task) for task in task_instances]
-        total_pages = (total + page_size - 1) // page_size if total > 0 else 1
-
-        return TaskListResponse(
-            items=items,
-            total=total,
-            page=page,
-            page_size=page_size,
-            total_pages=total_pages,
+        stmt = (
+            select(Task)
+            .where(Task.user_id == user_id)
+            .order_by(Task.created_at.desc())
+            .offset(offset)
+            .limit(page_size)
         )
+        tasks = (await self.db.exec(stmt)).all()
+        return tasks
 
-    def get_task(self, current_user: TokenUser, task_id: UUID) -> Task:
-        """Get a single task for the current user."""
-        task = self.session.exec(
-            select(Task).where(Task.id == task_id, Task.user_id == current_user.user_id)
-        ).first()
-
+    async def get_task(self, user_id: UUID, task_id: UUID) -> Task:
+        stmt = select(Task).where(Task.id == task_id, Task.user_id == user_id)
+        task = (await self.db.exec(stmt)).first()
         if not task:
-            raise NotFoundError(resource="Task", resource_id=str(task_id))
-
+            raise HTTPException(status_code=404, detail="Task not found")
         return task
 
-    def update_task(
-        self, current_user: TokenUser, task_id: UUID, task_data: TaskUpdate
-    ) -> Task:
-        """Update an existing task."""
-        task = self.get_task(current_user, task_id)
-
-        if task_data.title is not None:
-            if not task_data.title.strip():
-                raise ValidationError(message="Title cannot be empty")
-            task.title = task_data.title.strip()
-
-        if task_data.description is not None:
-            task.description = task_data.description
-
-        if task_data.is_completed is not None:
-            task.is_completed = task_data.is_completed
-
-        task.updated_at = datetime.now(timezone.utc)
-        self.session.commit()
-        self.session.refresh(task)
+    async def update_task(self, user_id: UUID, task_id: UUID, task_data: UpdateTaskInput) -> Task:
+        task = await self.get_task(user_id, task_id)
+        for field, value in task_data.model_dump(exclude_unset=True).items():
+            if field == "due_date" and value and value.tzinfo is not None:
+                value = value.astimezone(timezone.utc).replace(tzinfo=None)
+            setattr(task, field, value)
+        await self.db.commit()
+        await self.db.refresh(task)
         return task
 
-    def delete_task(self, current_user: TokenUser, task_id: UUID) -> None:
-        """Delete a task."""
-        task = self.get_task(current_user, task_id)
-        self.session.delete(task)
-        self.session.commit()
+    async def delete_task(self, user_id: UUID, task_id: UUID) -> None:
+        task = await self.get_task(user_id, task_id)
+        await self.db.delete(task)
+        await self.db.commit()
 
 
-def get_task_service(session: Session = Depends(get_session)) -> TaskService:
-    return TaskService(session)
+# Dependency
+async def get_task_service(db: AsyncSession = Depends(get_async_session)) -> TaskService:
+    return TaskService(db)
 
 
-# ---------------- Endpoints ----------------
+# =========================
+# Routes
+# =========================
 
-@router.post("", response_model=TaskResponse, status_code=status.HTTP_201_CREATED)
-async def create_task(
-    task_data: TaskCreate,
+def verify_user_access(user: User):
+    """Ensure users can only access their own tasks."""
+    # This function just validates that the user is authenticated
+    # and can access their own resources. Simply returning the user
+    # is sufficient for the dependency system.
+    return user
+
+
+@router.post("", status_code=status.HTTP_201_CREATED)
+async def create_task_endpoint(
+    task_data: AddTaskInput,
     service: TaskService = Depends(get_task_service),
-    current_user: TokenUser = Depends(get_current_user),
+    user: User = Depends(get_current_user_from_betterauth),
 ):
-    return service.create_task(current_user.user_id, task_data)
+    verify_user_access(user)
+    task = await service.create_task(user.id, task_data)
+    return TaskOutput.model_validate(task)
 
 
-@router.get("", response_model=TaskListResponse)
-async def list_tasks(
+@router.get("")
+async def list_tasks_endpoint(
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=100),
     service: TaskService = Depends(get_task_service),
-    current_user: TokenUser = Depends(get_current_user),
+    user: User = Depends(get_current_user_from_betterauth),
 ):
-    return service.get_tasks(current_user.user_id, page, page_size)
+    verify_user_access(user)
+    tasks = await service.get_tasks(user.id, page, page_size)
+    return {
+        "tasks": [TaskOutput.model_validate(t) for t in tasks],
+        "page": page
+    }
 
 
-@router.get("/{task_id}", response_model=TaskResponse)
-async def get_task(
+@router.get("/{task_id}")
+async def get_task_endpoint(
     task_id: UUID,
     service: TaskService = Depends(get_task_service),
-    current_user: TokenUser = Depends(get_current_user),
+    user: User = Depends(get_current_user_from_betterauth),
 ):
-    return service.get_task(current_user, task_id)
+    verify_user_access(user)
+    task = await service.get_task(user.id, task_id)
+    return TaskOutput.model_validate(task)
 
 
-@router.patch("/{task_id}", response_model=TaskResponse)
-async def partial_update_task(
+@router.patch("/{task_id}")
+async def update_task_endpoint(
     task_id: UUID,
-    task_data: TaskUpdate,
+    task_data: UpdateTaskInput,
     service: TaskService = Depends(get_task_service),
-    current_user: TokenUser = Depends(get_current_user),
+    user: User = Depends(get_current_user_from_betterauth),
 ):
-    return service.update_task(current_user, task_id, task_data)
+    verify_user_access(user)
+    task = await service.update_task(user.id, task_id, task_data)
+    return TaskOutput.model_validate(task)
+
+
+@router.patch("/{task_id}/complete")
+async def complete_task_endpoint(
+    task_id: UUID,
+    service: TaskService = Depends(get_task_service),
+    user: User = Depends(get_current_user_from_betterauth),
+):
+    verify_user_access(user)
+    task = await service.update_task(user.id, task_id, UpdateTaskInput(is_complete=True))
+    return TaskOutput.model_validate(task)
+
+
+@router.patch("/{task_id}/incomplete")
+async def incomplete_task_endpoint(
+    task_id: UUID,
+    service: TaskService = Depends(get_task_service),
+    user: User = Depends(get_current_user_from_betterauth),
+):
+    verify_user_access(user)
+    task = await service.update_task(user.id, task_id, UpdateTaskInput(is_complete=False))
+    return TaskOutput.model_validate(task)
 
 
 @router.delete("/{task_id}", status_code=status.HTTP_204_NO_CONTENT)
-async def delete_task(
+async def delete_task_endpoint(
     task_id: UUID,
     service: TaskService = Depends(get_task_service),
-    current_user: TokenUser = Depends(get_current_user),
+    user: User = Depends(get_current_user_from_betterauth),
 ):
-    service.delete_task(current_user, task_id)
-    return None
+    verify_user_access(user)
+    await service.delete_task(user.id, task_id)

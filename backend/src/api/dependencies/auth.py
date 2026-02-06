@@ -3,10 +3,10 @@ from typing import Optional
 from uuid import UUID
 from fastapi import Request, Depends, HTTPException, status
 from pydantic import BaseModel
-from sqlmodel import Session
+from sqlmodel.ext.asyncio.session import AsyncSession # Import AsyncSession
 
 from src.models.user import User
-from src.models.database import get_session
+from src.models.database import get_async_session # Use get_async_session
 from src.services.auth_service import get_current_user_from_betterauth, get_optional_user_from_betterauth
 
 
@@ -41,7 +41,7 @@ class TokenUser(BaseModel):
 
 async def get_current_user(
     request: Request,
-    session: Session = Depends(get_session),
+    session: AsyncSession = Depends(get_async_session), # Use AsyncSession and get_async_session
 ) -> TokenUser:
     """Dependency to extract and verify the current user from BetterAuth session.
 
@@ -70,7 +70,7 @@ async def get_current_user(
 
 async def get_optional_user(
     request: Request,
-    session: Session = Depends(get_session),
+    session: AsyncSession = Depends(get_async_session), # Use AsyncSession and get_async_session
 ) -> Optional[TokenUser]:
     """Dependency to optionally extract user from BetterAuth session.
 
@@ -84,7 +84,7 @@ async def get_optional_user(
         TokenUser if valid session provided, None otherwise
     """
     try:
-        user = get_optional_user_from_betterauth(request, session)
+        user = await get_optional_user_from_betterauth(request, session) # Await get_optional_user_from_betterauth
         if user:
             return TokenUser.from_user_model(user)
         return None
@@ -110,5 +110,34 @@ def verify_user_access(user_id: UUID, current_user: TokenUser = Depends(get_curr
             status_code=status.HTTP_403_FORBIDDEN,
             detail={"code": "FORBIDDEN", "message": "Access denied"},
         )
+    return current_user
+
+
+from fastapi import Request
+import re
+from uuid import UUID
+
+def verify_user_from_path(request: Request, current_user: TokenUser = Depends(get_current_user)):
+    """Extract user_id from path and verify it matches the authenticated user."""
+    # Extract user_id from the request path
+    path = request.url.path
+    # Look for UUID pattern in the path after /api/users/ or just /api/
+    # Support both patterns: /api/{user_id}/... and /api/users/{user_id}/...
+    match = re.search(r'/api/(?:users/)?([a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12})', path)
+
+    if not match:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail={"code": "FORBIDDEN", "message": "Could not extract user ID from path"},
+        )
+
+    path_user_id = UUID(match.group(1))
+
+    if current_user.user_id != path_user_id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail={"code": "FORBIDDEN", "message": "Access denied"},
+        )
+
     return current_user
 

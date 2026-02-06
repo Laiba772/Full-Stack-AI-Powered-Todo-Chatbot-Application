@@ -47,7 +47,7 @@ htmlcov/
 *.cover
 
 # Database
-*.db
+*test.db
 *.sqlite3
 
 # Logs
@@ -70,3 +70,7 @@ backend/venv/
 backend/__pycache__/
 backend/*.pyc
 backend/tests/.pytest_cache/
+
+# root specific
+
+*.node_modules

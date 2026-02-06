@@ -1,0 +1,7 @@
+{
+  "buildCommand": "npm run build",
+  "outputDirectory": "out",
+  "env": {
+    "NEXT_PUBLIC_CHAT_DOMAIN_KEY": "@next_public_chat_domain_key"
+  }
+}

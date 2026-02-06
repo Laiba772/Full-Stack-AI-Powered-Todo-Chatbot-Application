@@ -32,7 +32,7 @@ export function TextArea({
       <textarea
         id={textAreaId}
         className={`
-          w-full px-4 py-3 bg-background-card border rounded-xl resize-y min-h-[120px]
+          w-full px-4 py-3 bg-background-card border rounded-xl resize-y min-h-30
           text-gray-100 placeholder-gray-500
           focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent
           transition-all duration-200

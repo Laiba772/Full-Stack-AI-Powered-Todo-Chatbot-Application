@@ -1,7 +1,6 @@
 import pytest
 from src.services.auth_service import auth_service
 
-
 class TestPasswordHashing:
     """Tests for password hashing functions."""
 

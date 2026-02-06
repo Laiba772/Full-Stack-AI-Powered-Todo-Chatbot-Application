@@ -3,7 +3,9 @@
 from pydantic_settings import BaseSettings
 from functools import lru_cache
 from typing import Optional
+from dotenv import load_dotenv
 
+load_dotenv()
 
 class Settings(BaseSettings):
     """Application settings loaded from environment variables."""
@@ -40,6 +42,17 @@ class Settings(BaseSettings):
 
     # CORS
     cors_origins: list[str] = ["http://localhost:3000"]
+
+    # OpenAI
+    openai_api_key: str
+    openai_model: str = "gpt-3.5-turbo"
+    openai_agent_model: str = "gpt-4-turbo-preview"  # Model for AI agent
+    openai_agent_max_tokens: int = 4096 # Max tokens for AI agent response
+    ai_agent_system_prompt: str = (
+        "You are a helpful AI assistant. Your primary goal is to assist users with their tasks. "
+        "Be concise and respond directly to the user's request. "
+        "If you need more information, ask clarifying questions."
+    )
 
     model_config = {
         "env_file": ".env",

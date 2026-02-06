@@ -92,7 +92,7 @@ export const useTasks = (pageSize: number = 20) => {
   const toggleComplete = async (taskId: string) => {
     const task = tasks.find(t => t.id === taskId);
     if (!task) return;
-    await updateTask(taskId, { is_completed: !task.is_completed });
+    await updateTask(taskId, { is_complete: !task.is_complete });
   };
 
   const goToPage = async (pageNum: number) => {

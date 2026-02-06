@@ -64,14 +64,14 @@ class TestJWTTokenCreation:
         user_id = uuid4()
         email = "test@example.com"
         secret = "test-secret"
-        expiration_hours = 24
+        expiration_minutes = 24 * 60
         token = create_jwt_token(
-            user_id, email, secret, expiration_hours=expiration_hours
+            user_id, email, secret, expiration_minutes=expiration_minutes
         )
         payload = decode_jwt_token(token)
         exp_time = datetime.fromtimestamp(payload["exp"])
         iat_time = datetime.fromtimestamp(payload["iat"])
-        assert exp_time - iat_time == timedelta(hours=expiration_hours)
+        assert exp_time - iat_time == timedelta(minutes=expiration_minutes)
 
     def test_create_jwt_token_custom_algorithm(self):
         """Test token with custom algorithm."""

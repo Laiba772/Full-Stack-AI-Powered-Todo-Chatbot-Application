@@ -1,0 +1,6 @@
+# NPM ignore for frontend
+node_modules/
+dist/
+build/
+*.log
+.env*

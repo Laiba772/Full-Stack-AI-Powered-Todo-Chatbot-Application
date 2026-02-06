@@ -18,7 +18,7 @@ export const useTasks = (userId: string, pageSize: number = 20) => {
     try {
       setLoading(true);
       const response: TaskListResponse = await getTasks(userId, pageNum, pageSize);
-      setTasks(response.items);
+      setTasks(response.items || []);
       setPage(response.page);
       setTotalPages(response.total_pages);
     } catch (err: any) {
@@ -71,7 +71,7 @@ export const useTasks = (userId: string, pageSize: number = 20) => {
   const toggleComplete = async (taskId: string) => {
     const task = tasks.find(t => t.id === taskId);
     if (!task) return;
-    await updateTask(taskId, { is_completed: !task.is_completed });
+    await updateTask(taskId, { is_complete: !task.is_complete });
   };
 
   const goToPage = async (pageNum: number) => {

@@ -1,0 +1,24 @@
+# Dockerignore for backend
+.git/
+Dockerfile*
+.dockerignore
+*.log*
+.env*
+coverage/
+__pycache__/
+*.pyc
+.venv/
+venv/
+dist/
+*.egg-info/
+.gitignore
+.env
+*.pyo
+*.pyd
+.pytest_cache/
+htmlcov/
+.mypy_cache/
+.vscode/
+.idea/
+*.sqlite
+

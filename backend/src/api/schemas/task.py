@@ -42,7 +42,7 @@ class TaskUpdate(BaseModel):
         default=None,
         description="Optional task description"
     )
-    is_completed: Optional[bool] = Field(
+    is_complete: Optional[bool] = Field(
         default=None,
         description="Completion status"
     )
@@ -52,7 +52,7 @@ class TaskUpdate(BaseModel):
             "example": {
                 "title": "Buy groceries and supplies",
                 "description": "Milk, eggs, bread, butter",
-                "is_completed": True
+                "is_complete": True
             }
         }
     )
@@ -65,7 +65,7 @@ class TaskResponse(BaseModel):
     user_id: UUID = Field(..., description="Owning user identifier")
     title: str = Field(..., description="Task title")
     description: Optional[str] = Field(default=None, description="Task description")
-    is_completed: bool = Field(..., description="Completion status")
+    is_complete: bool = Field(..., description="Completion status")
     created_at: datetime = Field(..., description="Creation timestamp")
     updated_at: datetime = Field(..., description="Last update timestamp")
 
@@ -77,7 +77,7 @@ class TaskResponse(BaseModel):
                 "user_id": "550e8400-e29b-41d4-a716-446655440001",
                 "title": "Buy groceries",
                 "description": "Milk, eggs, bread",
-                "is_completed": False,
+                "is_complete": False,
                 "created_at": "2026-01-07T10:30:00Z",
                 "updated_at": "2026-01-07T10:30:00Z"
             }
@@ -103,7 +103,7 @@ class TaskListResponse(BaseModel):
                         "user_id": "550e8400-e29b-41d4-a716-446655440001",
                         "title": "Buy groceries",
                         "description": "Milk, eggs, bread",
-                        "is_completed": False,
+                        "is_complete": False,
                         "created_at": "2026-01-07T10:30:00Z",
                         "updated_at": "2026-01-07T10:30:00Z"
                     }
