@@ -1,8 +1,9 @@
 {
   "buildCommand": "cd frontend && npm run build",
   "installCommand": "cd frontend && npm install",
-  "outputDirectory": "frontend/out",
+  "outputDirectory": "frontend/.next",
   "env": {
-    "NEXT_PUBLIC_CHAT_DOMAIN_KEY": "@next_public_chat_domain_key"
+    "NEXT_PUBLIC_CHAT_DOMAIN_KEY": "domain_pk_6985b10132b08195a23983fb1dd31dcb09cc2a2170498ee0",
+    "NEXT_PUBLIC_API_URL": "https://laiba67-chatbot-app.hf.space"
   }
 }
