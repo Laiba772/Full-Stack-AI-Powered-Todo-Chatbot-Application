@@ -71,7 +71,7 @@ export function TaskItem({
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <div className="flex-1">
             <div className="flex items-start gap-3">
-              <div className="flex-shrink-0 pt-1">
+              <div className="shrink-0 pt-1">
                 <input
                   type="checkbox"
                   checked={task.is_complete}
@@ -126,8 +126,7 @@ export function TaskItem({
             <Button
               size="sm"
               onClick={() => toggleComplete(task.id)}
-              variant={task.is_complete ? 'outline' : 'gradient'}
-              className={`${task.is_complete ? 'border-green-500/30 text-green-400 hover:bg-green-500/10' : 'bg-gradient-to-r from-purple-600 to-cyan-500 hover:from-purple-700 hover:to-cyan-600'} transform transition-none hover:scale-100 hover:shadow-none`}
+              className={`${task.is_complete ? 'border-green-500/30 text-green-400 hover:bg-green-500/10' : 'bg-linear-to-r from-purple-600 to-cyan-500 hover:from-purple-700 hover:to-cyan-600'} transform transition-none hover:scale-100 hover:shadow-none`}
             >
               <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 {task.is_complete ? (
@@ -142,7 +141,6 @@ export function TaskItem({
             <Button
               size="sm"
               onClick={() => setIsEditing(true)}
-              variant="outline"
               className="border-gray-600 text-gray-300 hover:bg-gray-800/50 transform transition-none hover:scale-100 hover:shadow-none"
             >
               <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -154,7 +152,6 @@ export function TaskItem({
             <Button
               size="sm"
               onClick={() => deleteTask(task.id)}
-              variant="outline"
               className="border-red-500/30 text-red-400 hover:bg-red-500/10 transform transition-none hover:scale-100 hover:shadow-none"
             >
               <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
